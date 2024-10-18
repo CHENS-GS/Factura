@@ -1,0 +1,104 @@
+﻿@page "/facturas"
+@using Factura.Models
+@inject BdfacturaContext _context
+@inject NavigationManager navigationManager
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@inject IJSRuntime JS
+<PageTitle>FACTURA LISTA</PageTitle>
+
+
+<h3>Lista de Facturas</h3>
+
+<button class="btn btn-primary" @onclick="NuevaFactura">Nueva Factura</button>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Número de Factura</th>
+            <th>RUC</th>
+            <th>Razón Social</th>
+            <th>Fecha de Emisión</th>
+            <th>Total</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var factura in facturas)
+        {
+            <tr>
+                <td>@factura.NumeroFactura</td>
+                <td>@factura.Ruc</td>
+                <td>@factura.RazonSocial</td>
+                <td>@factura.FechaEmision.ToString("dd/MM/yyyy")</td>
+                <td>@factura.Total.ToString("C")</td>
+                <td>
+                    <button class="btn btn-info" @onclick="() => VerDetalleFactura(factura.IdFactura)">Ver Detalle</button>
+                    <button class="btn btn-warning" @onclick="() => EditarFactura(factura.IdFactura)">Editar</button>
+                    <button class="btn btn-danger" @onclick="() => ConfirmarEliminarFactura(factura.IdFactura)">Eliminar</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Factura> facturas = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar la lista de facturas desde la base de datos
+        facturas = await _context.Facturas.ToListAsync();
+    }
+
+    void NuevaFactura()
+    {
+        // Redirigir al formulario para crear una nueva factura
+        navigationManager.NavigateTo("/facturaform");
+    }
+
+    void VerDetalleFactura(int idFactura)
+    {
+        // Redirigir a la página de detalles de la factura
+        navigationManager.NavigateTo($"/facturadetalle/{idFactura}");
+    }
+
+    void EditarFactura(int idFactura)
+    {
+        // Redirigir al formulario para editar la factura
+        navigationManager.NavigateTo($"/facturaform/{idFactura}");
+    }
+
+    // Función para mostrar la advertencia de confirmación antes de eliminar
+    async Task ConfirmarEliminarFactura(int idFactura)
+    {
+        bool confirmado = await JS.InvokeAsync<bool>("confirm", "¿Estás seguro de que deseas eliminar esta factura?");
+        if (confirmado)
+        {
+            await EliminarFactura(idFactura); // Proceder a eliminar la factura si se confirma
+        }
+    }
+
+    async Task EliminarFactura(int idFactura)
+    {
+        var factura = await _context.Facturas
+            .Include(f => f.DetalleFacturas)  // Incluir los detalles de la factura
+            .FirstOrDefaultAsync(f => f.IdFactura == idFactura);
+
+        if (factura != null)
+        {
+            // Eliminar los detalles relacionados primero
+            if (factura.DetalleFacturas.Any())
+            {
+                _context.DetalleFacturas.RemoveRange(factura.DetalleFacturas);
+            }
+
+            // Luego eliminar la factura
+            _context.Facturas.Remove(factura);
+            await _context.SaveChangesAsync();
+
+            // Actualizar la lista de facturas después de eliminar
+            facturas = await _context.Facturas.ToListAsync();
+        }
+    }
+}

@@ -1,0 +1,38 @@
+﻿<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <!-- Enlace al inicio -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill" aria-hidden="true"></span> INICIO
+            </NavLink>
+        </div>
+
+        <!-- Enlace para registrar una nueva factura -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/facturaform">
+                <span class="bi bi-file-earmark-plus-fill" aria-hidden="true"></span> Registrar Factura
+            </NavLink>
+        </div>
+
+        <!-- Enlace a la lista de facturas -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/facturas">
+                <span class="bi bi-file-earmark-text-fill" aria-hidden="true"></span> Lista de Facturas
+            </NavLink>
+        </div>
+
+        <!-- Enlace para registrar un nuevo producto -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/productoform">
+                <span class="bi bi-box-seam-fill" aria-hidden="true"></span> Registrar Producto
+            </NavLink>
+        </div>
+
+        <!-- Enlace a la lista de productos -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/productos">
+                <span class="bi bi-cart-fill" aria-hidden="true"></span> Lista de Productos
+            </NavLink>
+        </div>
+    </nav>
+</div>

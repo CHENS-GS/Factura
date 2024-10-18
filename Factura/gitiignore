@@ -1,0 +1,12 @@
+# Visual Studio
+.vs/
+.vscode/
+bin/
+obj/
+*.user
+*.suo
+
+# Archivos de compilación
+*.dll
+*.exe
+*.log

@@ -1,0 +1,80 @@
+﻿@rendermode InteractiveServer
+@page "/facturadetalle/{idFactura:int}"
+@using Factura.Models
+@inject BdfacturaContext _context
+@inject NavigationManager navigationManager
+@using Microsoft.EntityFrameworkCore
+<PageTitle>FACTURADETALLE</PageTitle>
+
+<h3>Detalles de la Factura</h3>
+
+@if (factura != null)
+{
+    <div>
+        <h4>Factura N°: @factura.NumeroFactura</h4>
+        <p><strong>RUC:</strong> @factura.Ruc</p>
+        <p><strong>Razón Social:</strong> @factura.RazonSocial</p>
+        <p><strong>Fecha de Emisión:</strong> @factura.FechaEmision.ToString("dd/MM/yyyy")</p>
+    </div>
+
+    <h4>Detalles de los Productos</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+                <th>IGV (18%)</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var detalle in detallesFactura)
+            {
+                <tr>
+                    <td>@detalle.CodigoProductoNavigation.Descripcion</td>
+                    <td>@detalle.Cantidad</td>
+                    <td>@detalle.ValorUnitario.ToString("F2")</td> <!-- Formato con 2 decimales -->
+                    <td>@(detalle.Cantidad * detalle.ValorUnitario)</td> <!-- Subtotal formateado -->
+                    <td>@((detalle.Cantidad * detalle.ValorUnitario) * 0.18m)</td> <!-- IGV formateado -->
+                    <td>@((detalle.Cantidad * detalle.ValorUnitario) * 1.18m)</td> <!-- Total con IGV formateado -->
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-secondary" @onclick="Volver">Volver a la Lista de Facturas</button>
+}
+else
+{
+    <p><em>Cargando detalles de la factura...</em></p>
+}
+
+@code {
+
+    private List<DetalleFactura> detallesFactura = new();
+
+    [Parameter] public int idFactura { get; set; }
+    private Factura factura;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Obtener la factura específica con sus detalles
+        factura = await _context.Facturas
+            .Include(f => f.DetalleFacturas)
+            .ThenInclude(d => d.CodigoProductoNavigation)
+            .FirstOrDefaultAsync(f => f.IdFactura == idFactura);
+
+        if (factura != null)
+        {
+            detallesFactura = factura.DetalleFacturas.ToList();
+        }
+    }
+
+    void Volver()
+    {
+        // Navegar de vuelta a la lista de facturas
+        navigationManager.NavigateTo("/facturas");
+    }
+}

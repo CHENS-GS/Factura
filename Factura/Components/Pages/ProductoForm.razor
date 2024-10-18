@@ -1,0 +1,67 @@
+﻿@rendermode InteractiveServer
+@page "/productoform/{IdProducto:maxlength(50)?}"
+@using Factura.Models
+@inject BdfacturaContext _context
+@inject NavigationManager navigationManager
+@using Microsoft.EntityFrameworkCore
+<PageTitle>FORM PRODUCT</PageTitle>
+
+<h3>@(IdProducto != null ? "Editar Producto" : "Nuevo Producto")</h3>
+
+<EditForm Model="producto" OnValidSubmit="GuardarProducto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Código del Producto:</label>
+        <InputText @bind-Value="producto.IdProducto" class="form-control" placeholder="Código del producto" disabled="@EsProductoExistente" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descripción:</label>
+        <InputText @bind-Value="producto.Descripcion" class="form-control" placeholder="Descripción del producto" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Precio:</label>
+        <InputNumber @bind-Value="producto.Precio" class="form-control" placeholder="Precio del producto" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+</EditForm>
+
+@code {
+    private Producto producto = new Producto();
+    [Parameter] public string? IdProducto { get; set; }
+
+    // Propiedad que verifica si el producto ya existe
+    private bool EsProductoExistente => !string.IsNullOrEmpty(IdProducto);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IdProducto != null)
+        {
+            producto = await _context.Productos.FindAsync(IdProducto);
+        }
+    }
+
+    async Task GuardarProducto()
+    {
+        if (IdProducto != null)
+        {
+            _context.Productos.Update(producto);
+        }
+        else
+        {
+            _context.Productos.Add(producto);
+        }
+        await _context.SaveChangesAsync();
+        navigationManager.NavigateTo("/productos");
+    }
+
+    void Cancelar()
+    {
+        navigationManager.NavigateTo("/productos");
+    }
+}

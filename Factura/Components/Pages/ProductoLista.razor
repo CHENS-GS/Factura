@@ -1,0 +1,67 @@
+﻿@rendermode InteractiveServer
+@page "/productos"
+@using Microsoft.EntityFrameworkCore
+@using Factura.Models  
+@inject BdfacturaContext _context  // Ajuste para usar el contexto adecuado
+@inject NavigationManager navigationManager
+<PageTitle>PRODUTCTO LISTA</PageTitle>
+
+<h3>Lista de Productos</h3>
+
+<button class="btn btn-primary" @onclick="NuevoProducto">Nuevo Producto</button>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var producto in productos)
+        {
+            <tr>
+                <td>@producto.IdProducto</td> <!-- Usamos IdProducto en lugar de Nombre -->
+                <td>@producto.Descripcion</td>
+                <td>@producto.Precio</td>
+                <td>
+                    <button class="btn btn-warning" @onclick="() => EditarProducto(producto.IdProducto)">Editar</button>
+                    <button class="btn btn-danger" @onclick="() => EliminarProducto(producto.IdProducto)">Eliminar</button>
+                </td>
+            </tr>
+        }   
+    </tbody>
+</table>
+
+@code {
+    private List<Producto> productos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargamos la lista de productos desde la base de datos
+        productos = await _context.Productos.ToListAsync();
+    }
+
+    void NuevoProducto()
+    {
+        navigationManager.NavigateTo("/productoform");
+    }
+
+    void EditarProducto(string codigoProducto)  // Usamos string para IdProducto que es NVARCHAR(50)
+    {
+        navigationManager.NavigateTo($"/productoform/{codigoProducto}");
+    }
+
+    async Task EliminarProducto(string codigoProducto)
+    {
+        var producto = await _context.Productos.FindAsync(codigoProducto);
+        if (producto != null)
+        {
+            _context.Productos.Remove(producto);
+            await _context.SaveChangesAsync();
+            productos = await _context.Productos.ToListAsync();  // Actualizamos la lista después de eliminar
+        }
+    }
+}

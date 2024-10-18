@@ -1,0 +1,216 @@
+﻿@page "/facturaform/{idFactura:int?}"
+@rendermode InteractiveServer
+@using Factura.Models
+@inject BdfacturaContext _context
+@inject NavigationManager navigationManager
+@using Microsoft.EntityFrameworkCore
+<PageTitle>fORM FACTURA</PageTitle>
+
+<h3>@(idFactura == null ? "Registrar Nueva Factura" : "Editar Factura")</h3>
+
+<EditForm Model="factura" OnValidSubmit="GuardarFactura">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Número de Factura:</label>
+        <InputText @bind-Value="factura.NumeroFactura" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">RUC:</label>
+        <InputText @bind-Value="factura.Ruc" class="form-control" placeholder="RUC del cliente" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Razón Social:</label>
+        <InputText @bind-Value="factura.RazonSocial" class="form-control" placeholder="Razón Social del cliente" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Emisión:</label>
+        <InputDate @bind-Value="factura.FechaEmision" TValue="DateTime" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Agregar Producto:</label>
+        <select @bind="productoSeleccionadoId" class="form-control" TValue="string">
+            <option value="">Seleccione un producto</option>
+            @foreach (var producto in productos)
+            {
+                <option value="@producto.IdProducto">@producto.Descripcion</option>
+            }
+        </select>
+
+        <button type="button" class="btn btn-primary mt-2" @onclick="AgregarProducto">Agregar Producto</button>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var detalle in facturaDetalles)
+            {
+                <tr>
+                    <td>@detalle.CodigoProductoNavigation.Descripcion</td>
+                    <td>
+                        <InputNumber @bind-Value="detalle.Cantidad" TValue="int" class="form-control"
+                                     @oninput="CalcularTotal" /> <!-- Llama a CalcularTotal cuando cambie la cantidad -->
+                    </td>
+                    <td>@detalle.ValorUnitario</td>
+                    <td>@(detalle.Cantidad * detalle.ValorUnitario)</td>
+                    <td><button class="btn btn-danger" @onclick="() => RemoverProducto(detalle)">Eliminar</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+    <div class="mb-3">
+        <label class="form-label">Total:</label>
+        <InputNumber @bind-Value="total" TValue="decimal" class="form-control" readonly />
+    </div>
+
+    <button type="submit" class="btn btn-primary">@((idFactura == null) ? "Guardar Factura" : "Actualizar Factura")</button>
+    <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+</EditForm>
+
+@code {
+    private Factura factura = new Factura();
+    private List<Producto> productos = new List<Producto>();
+    private List<DetalleFactura> facturaDetalles = new List<DetalleFactura>();
+    private string? productoSeleccionadoId;
+    private decimal total;
+
+    [Parameter] public int? idFactura { get; set; }  
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar productos desde la base de datos
+        productos = await _context.Productos.ToListAsync();
+
+        if (idFactura != null)
+        {
+            // Editando una factura existente
+            factura = await _context.Facturas
+                .Include(f => f.DetalleFacturas)
+                .ThenInclude(df => df.CodigoProductoNavigation)
+                .FirstOrDefaultAsync(f => f.IdFactura == idFactura);
+
+            if (factura == null)
+            {
+                
+                navigationManager.NavigateTo("/facturas");
+                return;
+            }
+
+            // Cargar los detalles de la factura en la lista
+            facturaDetalles = factura.DetalleFacturas.ToList();
+
+            // Calcular el total inicial
+            CalcularTotal();
+        }
+        else
+        {
+            // Nueva factura, generar número automáticamente
+            var ultimaFactura = await _context.Facturas.OrderByDescending(f => f.IdFactura).FirstOrDefaultAsync();
+            if (ultimaFactura != null)
+            {
+                int ultimoNumero = int.Parse(ultimaFactura.NumeroFactura.Split('-')[1]);
+                factura.NumeroFactura = $"F-{(ultimoNumero + 1).ToString("D5")}";
+            }
+            else
+            {
+                factura.NumeroFactura = "F-00001";
+            }
+
+            factura.FechaEmision = DateTime.Now;
+        }
+    }
+
+    void AgregarProducto()
+    {
+        if (!string.IsNullOrEmpty(productoSeleccionadoId))
+        {
+            var producto = productos.FirstOrDefault(p => p.IdProducto == productoSeleccionadoId);
+            if (producto != null)
+            {
+                facturaDetalles.Add(new DetalleFactura
+                    {
+                        CodigoProductoNavigation = producto,
+                        CodigoProducto = producto.IdProducto,
+                        Cantidad = 1,  
+                        ValorUnitario = producto.Precio,
+                        Igv = 0.18m  // IGV del 18%
+                    });
+                CalcularTotal();
+            }
+        }
+    }
+
+    void RemoverProducto(DetalleFactura detalle)
+    {
+        facturaDetalles.Remove(detalle);
+        CalcularTotal();
+    }
+
+    void CalcularTotal()
+    {
+        total = facturaDetalles.Sum(d => d.Cantidad * d.ValorUnitario * (1 + d.Igv));  // Incluye IGV
+    }
+
+    async Task GuardarFactura()
+    {
+        // Calcular subtotal y monto del IGV
+        factura.Subtotal = facturaDetalles.Sum(d => d.Cantidad * d.ValorUnitario);
+        factura.MontoIgv = factura.Subtotal * 0.18m;
+        factura.Total = factura.Subtotal + factura.MontoIgv;
+
+        if (idFactura == null)
+        {
+            // Guardar nueva factura
+            _context.Facturas.Add(factura);
+        }
+        else
+        {
+            // Actualizar factura existente
+            _context.Facturas.Update(factura);
+
+            // Eliminar los detalles anteriores y agregar los nuevos
+            var detallesAnteriores = _context.DetalleFacturas.Where(d => d.IdFactura == factura.IdFactura);
+            _context.DetalleFacturas.RemoveRange(detallesAnteriores);
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Guardar detalles de la factura
+        foreach (var detalle in facturaDetalles)
+        {
+            var detalleFactura = new DetalleFactura
+                {
+                    IdFactura = factura.IdFactura,
+                    CodigoProducto = detalle.CodigoProducto,
+                    Cantidad = detalle.Cantidad,
+                    ValorUnitario = detalle.ValorUnitario,
+                    Igv = detalle.Igv,
+                    ImporteTotal = detalle.Cantidad * detalle.ValorUnitario * (1 + detalle.Igv)
+                };
+            _context.DetalleFacturas.Add(detalleFactura);
+        }
+
+        await _context.SaveChangesAsync();
+        navigationManager.NavigateTo("/facturas");
+    }
+
+    void Cancelar()
+    {
+        navigationManager.NavigateTo("/facturas");
+    }
+}

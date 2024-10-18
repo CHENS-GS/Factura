@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\DELL\\source\\repos\\Factura\\Factura\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Factura.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Factura.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\DELL\\source\\repos\\Factura\\Factura\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\DELL\\source\\repos\\Factura\\Factura\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\DELL\\source\\repos\\Factura\\Factura\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\DELL\\source\\repos\\Factura\\Factura\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Factura.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Factura.props",
+      "PackagePath": "build\\Factura.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Factura.props",
+      "PackagePath": "buildMultiTargeting\\Factura.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Factura.props",
+      "PackagePath": "buildTransitive\\Factura.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
